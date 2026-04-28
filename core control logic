@@ -1,0 +1,37 @@
+// 台达WPLSoft / 信捷XCPPro 结构化文本(ST)示例
+// 变量定义
+VAR
+    bPhotoelectric: BOOL; // 光电传感器检测物料到位
+    bCameraTrigger: BOOL; // 触发工业相机拍照
+    bVisionDone: BOOL;    // 视觉识别完成信号
+    sClassResult: STRING;  // 视觉返回的分类结果 ('Aluminum','Stainless','Carbon','Abnormal')
+    bServoStart: BOOL;     // 整形伺服启动
+    bCylinderAct: BOOL;     // 分流气缸动作
+    tDelay: TON;           // 分流延时定时器
+    nDelayTime: INT := 500; // 预设分流延时(ms)
+END_VAR
+
+// 主程序逻辑
+// 1. 供料与光电检测
+IF bPhotoelectric AND NOT bCameraTrigger THEN
+    bCameraTrigger := TRUE; // 触发相机
+    bServoStart := TRUE;    // 启动整形振动
+END_IF;
+
+// 2. 等待视觉识别完成
+IF bCameraTrigger AND bVisionDone THEN
+    bCameraTrigger := FALSE;
+    // 启动分流延时
+    tDelay(IN := TRUE, PT := T#500MS);
+END_IF;
+
+// 3. 延时到，执行分流动作
+IF tDelay.Q THEN
+    CASE sClassResult OF
+        'Aluminum':  bCylinderAct := TRUE; // 气缸1动作
+        'Stainless': bCylinderAct := TRUE; // 气缸2动作
+        'Carbon':    bCylinderAct := TRUE; // 气缸3动作
+        'Abnormal':  bCylinderAct := FALSE; // 旁路通过
+    END_CASE;
+    tDelay(IN := FALSE);
+END_IF;

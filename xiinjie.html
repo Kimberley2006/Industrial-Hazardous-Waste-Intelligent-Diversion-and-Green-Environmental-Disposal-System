@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>工业边角料自动分流系统软件</title>
+  <style>
+    :root{
+      --bg:#0a0f1a;
+      --bg2:#0f1728;
+      --panel:#131d31;
+      --panel2:#1a2740;
+      --panel3:#0f1627;
+      --line:#24324d;
+      --text:#e9f0ff;
+      --muted:#9fb0d1;
+      --blue:#4f8cff;
+      --blue2:#2b6fff;
+      --green:#2fc27d;
+      --yellow:#f0b64b;
+      --red:#ef6b6b;
+      --cyan:#38d0ff;
+      --shadow:0 12px 30px rgba(0,0,0,.28);
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:"Microsoft YaHei",Arial,sans-serif;
+      color:var(--text);
+      background:linear-gradient(180deg,#09111f 0%,#0d1627 100%);
+      overflow:hidden;
+    }
+
+    .app{
+      display:grid;
+      grid-template-columns: 76px 1fr;
+      height:100vh;
+    }
+
+    .sidebar{
+      background:linear-gradient(180deg,#0b1220 0%,#0a101b 100%);
+      border-right:1px solid rgba(255,255,255,.06);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding:14px 10px;
+      gap:12px;
+    }
+    .logo{
+      width:44px;height:44px;border-radius:14px;
+      background:linear-gradient(180deg,#4f8cff,#2b6fff);
+      display:flex;align-items:center;justify-content:center;
+      font-size:22px;font-weight:700;box-shadow:var(--shadow);
+      margin-bottom:6px;
+    }
+    .navBtn{
+      width:48px;height:48px;border-radius:14px;border:1px solid rgba(255,255,255,.06);
+      background:linear-gradient(180deg,#152038,#111a2c);
+      color:#dce8ff;display:flex;align-items:center;justify-content:center;
+      font-size:20px;cursor:pointer;transition:.18s ease;
+    }
+    .navBtn.active,.navBtn:hover{background:linear-gradient(180deg,#223659,#162744);transform:translateY(-1px)}
+    .sidebar .spacer{flex:1}
+
+    .main{
+      display:grid;
+      grid-template-rows: 60px 1fr;
+      min-width:0;
+    }
+
+    .topbar{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:0 18px 0 18px;
+      background:rgba(10,15,25,.55);
+      border-bottom:1px solid rgba(255,255,255,.06);
+      backdrop-filter:blur(10px);
+    }
+    .top-left{display:flex;align-items:center;gap:14px}
+    .window-actions{display:flex;gap:8px}
+    .dot{width:12px;height:12px;border-radius:50%}
+    .dot.red{background:#ff6258}.dot.yellow{background:#ffbe2f}.dot.green{background:#28c840}
+    .app-title{font-size:18px;font-weight:700;letter-spacing:.3px}
+    .sub-title{font-size:12px;color:var(--muted);margin-top:2px}
+    .top-right{display:flex;align-items:center;gap:10px}
+    .badge{
+      padding:7px 12px;border-radius:999px;font-size:12px;
+      border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#cfe0ff
+    }
+
+    .workspace{
+      padding:14px;
+      display:grid;
+      grid-template-columns: minmax(0,1.45fr) minmax(360px,.95fr);
+      gap:14px;
+      min-width:0;
+      overflow:auto;
+    }
+
+    .panel{
+      background:linear-gradient(180deg,rgba(21,31,50,.98),rgba(15,22,39,.98));
+      border:1px solid rgba(255,255,255,.07);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      min-width:0;
+    }
+    .panelHeader{
+      height:48px;display:flex;align-items:center;justify-content:space-between;
+      padding:0 16px;border-bottom:1px solid rgba(255,255,255,.06);
+      background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,0));
+    }
+    .panelHeader h3{margin:0;font-size:15px}
+    .panelBody{padding:14px 16px}
+
+    .leftCol,.rightCol{display:grid;gap:16px;min-width:0}
+    .leftCol{grid-template-rows:auto auto auto 1fr}
+    .rightCol{grid-template-rows:auto auto auto auto}
+
+    .statusBar{
+      display:grid;grid-template-columns: repeat(4,minmax(0,1fr));gap:12px;
+    }
+    .stat{
+      background:linear-gradient(180deg,#182542,#111a2f);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:14px;
+      padding:12px 14px;
+      min-height:92px;
+    }
+    .stat .label{font-size:12px;color:var(--muted);margin-bottom:8px}
+    .stat .value{font-size:28px;font-weight:800;line-height:1}
+    .stat .desc{margin-top:8px;color:#8fb8ff;font-size:12px}
+
+    .modeStrip{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:12px 14px;border-radius:14px;
+      background:linear-gradient(180deg,#172540,#10192c);
+      border:1px solid rgba(255,255,255,.06);
+    }
+    .modeInfo{display:flex;align-items:center;gap:10px}
+    .lamp{
+      width:12px;height:12px;border-radius:50%;background:#5c6884;
+      box-shadow:0 0 0 2px rgba(255,255,255,.05) inset;
+    }
+    .lamp.run{background:var(--green);box-shadow:0 0 12px rgba(47,194,125,.65)}
+    .lamp.pause{background:var(--yellow);box-shadow:0 0 12px rgba(240,182,75,.65)}
+    .lamp.alarm{background:var(--red);box-shadow:0 0 12px rgba(239,107,107,.65)}
+    .modeTitle{font-size:15px;font-weight:700}
+    .modeSub{font-size:12px;color:var(--muted);margin-top:3px}
+    .chip{
+      padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;
+      border:1px solid rgba(255,255,255,.08)
+    }
+    .chip.ok{background:rgba(47,194,125,.12);color:#83f0ba}
+    .chip.warn{background:rgba(240,182,75,.12);color:#ffd98b}
+    .chip.bad{background:rgba(239,107,107,.12);color:#ffafaf}
+
+    .flowBoard{
+      background:linear-gradient(180deg,#10192c,#0d1526);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:14px;
+      padding:12px;
+    }
+    .flow{
+      display:grid;grid-template-columns: repeat(5,1fr);gap:10px;
+    }
+    .node{
+      position:relative;
+      border-radius:14px;
+      min-height:104px;
+      padding:12px 10px;
+      border:1px solid rgba(255,255,255,.07);
+      background:linear-gradient(180deg,#19284a,#121d36);
+      display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;
+      transition:.2s ease;
+    }
+    .node.active{box-shadow:0 0 0 1px rgba(79,140,255,.4) inset, 0 0 18px rgba(79,140,255,.18)}
+    .node .n{font-weight:700;margin-bottom:6px}
+    .node .d{font-size:12px;color:var(--muted);line-height:1.5}
+    .arrow{
+      position:absolute;right:-14px;top:50%;transform:translateY(-50%);
+      font-size:22px;color:#67cfff
+    }
+
+    .controlGrid{
+      display:grid;grid-template-columns: repeat(5, minmax(0,1fr));gap:10px;
+    }
+    .softBtn{
+      appearance:none;border:none;cursor:pointer;
+      border-radius:14px;padding:13px 12px;color:white;font-weight:700;font-size:14px;
+      background:linear-gradient(180deg,#223659,#172744);
+      border:1px solid rgba(255,255,255,.08);
+      box-shadow:0 8px 18px rgba(0,0,0,.18);
+      transition:transform .15s ease, box-shadow .18s ease, filter .18s ease, background .18s ease;
+    }
+    .softBtn:hover{transform:translateY(-1px);filter:brightness(1.04)}
+    .softBtn:active{transform:translateY(1px) scale(.985)}
+    .softBtn.primary{background:linear-gradient(180deg,#4f8cff,#2b6fff)}
+    .softBtn.success{background:linear-gradient(180deg,#36d28d,#20a86e)}
+    .softBtn.warning{background:linear-gradient(180deg,#ffcf68,#d99d26);color:#1d1b16}
+    .softBtn.danger{background:linear-gradient(180deg,#ff8585,#de4d4d)}
+    .softBtn.ghost{background:linear-gradient(180deg,#25324d,#19253c)}
+    .softBtn.active{
+      box-shadow:0 0 0 1px rgba(255,255,255,.22) inset, 0 0 22px rgba(79,140,255,.22);
+      filter:brightness(1.06);
+    }
+
+    .screen{
+      background:linear-gradient(180deg,#09111f,#0b1424);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:14px;
+      overflow:hidden;
+    }
+    .screenTabs{
+      display:flex;gap:6px;padding:10px 10px 0 10px;
+      background:rgba(255,255,255,.02);border-bottom:1px solid rgba(255,255,255,.05)
+    }
+    .tab{
+      padding:8px 12px;border-radius:10px 10px 0 0;font-size:12px;color:#cfe0ff;
+      background:linear-gradient(180deg,#1b2a47,#14213a);
+      border:1px solid rgba(255,255,255,.06);border-bottom:none;
+      cursor:pointer; user-select:none; transition:.15s ease;
+    }
+    .tab:hover{filter:brightness(1.06)}
+    .tab.active{background:linear-gradient(180deg,#2b446d,#1c2c49)}
+    .screenBody{padding:12px}
+
+    .machineArea{
+      display:grid;grid-template-columns: minmax(0,1.2fr) minmax(280px,.9fr);gap:12px;
+      min-height:260px;
+    }
+    .beltBox,.chartBox,.deviceBox,.tableBox,.logBox{
+      background:linear-gradient(180deg,#101a2d,#0c1423);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:14px;
+      overflow:hidden;
+    }
+    .boxHead{
+      padding:10px 12px;font-size:13px;font-weight:700;border-bottom:1px solid rgba(255,255,255,.06);
+      display:flex;justify-content:space-between;align-items:center
+    }
+    .beltCanvasWrap{padding:10px;height:210px}
+    canvas{width:100%;height:100%;display:block}
+
+    .deviceGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px}
+    .deviceCard{
+      padding:12px;border-radius:12px;background:linear-gradient(180deg,#17233b,#111a2d);
+      border:1px solid rgba(255,255,255,.06)
+    }
+    .deviceCard .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+    .mini{font-size:12px;color:var(--muted)}
+    .progress{width:100%;height:8px;background:#0b1220;border-radius:999px;overflow:hidden;margin-top:10px}
+    .bar{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:999px}
+
+    .tableWrap{padding:10px}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{padding:9px 8px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left}
+    th{color:#a9bbdd;font-weight:600}
+
+    .logList{padding:8px 10px 10px 10px;display:grid;gap:8px;max-height:260px;overflow:auto}
+    .logItem{
+      padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.06);
+      background:linear-gradient(180deg,#17233b,#10192b);font-size:13px
+    }
+    .logTime{font-size:11px;color:var(--muted);margin-bottom:5px}
+
+    
+    @media (max-width: 1500px){
+      .workspace{grid-template-columns:minmax(0,1.2fr) minmax(320px,.9fr)}
+      .machineArea{grid-template-columns:1fr}
+      .beltCanvasWrap{height:190px}
+    }
+    @media (max-width: 1200px){
+      .workspace{grid-template-columns:1fr}
+      .statusBar{grid-template-columns: repeat(2,minmax(0,1fr))}
+      .controlGrid{grid-template-columns: repeat(3,minmax(0,1fr))}
+      .machineArea{grid-template-columns:1fr}
+    }
+    @media (max-width: 860px){
+      .app{grid-template-columns:64px 1fr}
+      .statusBar{grid-template-columns:1fr}
+      .controlGrid{grid-template-columns: repeat(2,minmax(0,1fr))}
+      .flow{grid-template-columns:1fr}
+      .arrow{display:none}
+      .top-right{display:none}
+    }
+
+    @media (max-width: 1350px){
+      .workspace{grid-template-columns:1fr}
+      .statusBar{grid-template-columns: repeat(2,1fr)}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="logo">X</div>
+      <div class="navBtn active">🖥</div>
+      <div class="navBtn">📊</div>
+      <div class="navBtn">⚙</div>
+      <div class="navBtn">📝</div>
+      <div class="navBtn">🔔</div>
+      <div class="spacer"></div>
+      <div class="navBtn">❔</div>
+    </aside>
+
+    <section class="main">
+      <div class="topbar">
+        <div class="top-left">
+          <div class="window-actions">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <div>
+            <div class="app-title">工业边角料自动分流系统软件</div>
+            <div class="sub-title">Xinje PLC · HMI · Vision · Sorting Control Suite</div>
+          </div>
+        </div>
+        <div class="top-right">
+          <span class="badge">用户：admin</span>
+          <span class="badge">班次：白班</span>
+          <span class="badge">项目模式：演示版</span>
+        </div>
+      </div>
+
+      <div class="workspace">
+        <div class="leftCol">
+          <div class="panel">
+            <div class="panelHeader">
+              <h3>系统运行总览</h3>
+              <span class="chip ok" id="modeChip">AUTO</span>
+            </div>
+            <div class="panelBody">
+              <div class="modeStrip">
+                <div class="modeInfo">
+                  <span class="lamp run" id="modeLamp"></span>
+                  <div>
+                    <div class="modeTitle" id="modeTitle">自动运行中</div>
+                    <div class="modeSub" id="modeSub">当前流程：供料 → 整形 → 视觉识别 → PLC联锁 → 气动分流</div>
+                  </div>
+                </div>
+                <div class="badge" id="timeNow">--:--:--</div>
+              </div>
+
+              <div style="height:12px"></div>
+
+              <div class="statusBar">
+                <div class="stat">
+                  <div class="label">当前处理速度</div>
+                  <div class="value" id="speedValue">68</div>
+                  <div class="desc">件/分钟 · 较人工提升 <span id="effUp">185</span>%</div>
+                </div>
+                <div class="stat">
+                  <div class="label">分类准确率</div>
+                  <div class="value" id="accValue">97.6%</div>
+                  <div class="desc">视觉识别 + PLC联锁</div>
+                </div>
+                <div class="stat">
+                  <div class="label">班次累计重量</div>
+                  <div class="value" id="sumWeight">171.5</div>
+                  <div class="desc">kg · 资源回收统计</div>
+                </div>
+                <div class="stat">
+                  <div class="label">单位处理能耗</div>
+                  <div class="value" id="energyValue">0.41</div>
+                  <div class="desc">kWh/100kg · 预计下降 22%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panelHeader">
+              <h3>主控流程监视</h3>
+              <span class="badge">实时工艺链</span>
+            </div>
+            <div class="panelBody">
+              <div class="flowBoard">
+                <div class="flow">
+                  <div class="node active" id="node0">
+                    <div class="n">供料单元</div>
+                    <div class="d">料斗补料<br>光电缺料检测</div>
+                    <div class="arrow">→</div>
+                  </div>
+                  <div class="node" id="node1">
+                    <div class="n">整形单元</div>
+                    <div class="d">振动打散<br>导向单层排列</div>
+                    <div class="arrow">→</div>
+                  </div>
+                  <div class="node" id="node2">
+                    <div class="n">视觉识别</div>
+                    <div class="d">外形采集<br>类别判断</div>
+                    <div class="arrow">→</div>
+                  </div>
+                  <div class="node" id="node3">
+                    <div class="n">PLC决策</div>
+                    <div class="d">联锁控制<br>队列缓存</div>
+                    <div class="arrow">→</div>
+                  </div>
+                  <div class="node" id="node4">
+                    <div class="n">气动分流</div>
+                    <div class="d">通道切换<br>称重统计</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panelHeader">
+              <h3>软件操作面板</h3>
+              <span class="badge">Operator Console</span>
+            </div>
+            <div class="panelBody">
+              <div class="controlGrid">
+                <button class="softBtn success active" id="startBtn" onclick="startLine()">启动系统</button>
+                <button class="softBtn ghost" id="pauseBtn" onclick="pauseLine()">暂停系统</button>
+                <button class="softBtn ghost" id="resetBtn" onclick="resetLine()">复位清零</button>
+                <button class="softBtn danger" id="alarmBtn" onclick="simulateAlarm()">模拟堵料报警</button>
+                <button class="softBtn ghost" id="clearBtn" onclick="clearAlarm()">清除报警</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panelHeader">
+              <h3>主监控画面</h3>
+              <span class="badge">HMI Runtime</span>
+            </div>
+            <div class="screen">
+              <div class="screenTabs">
+                <div class="tab active" id="tabOverview" onclick="switchTab('overview')">总览画面</div>
+                <div class="tab" id="tabDevices" onclick="switchTab('devices')">设备监控</div>
+                <div class="tab" id="tabAlarms" onclick="switchTab('alarms')">报警记录</div>
+              </div>
+              <div class="screenBody">
+                <div class="machineArea" id="screenOverview">
+                  <div class="beltBox">
+                    <div class="boxHead">
+                      <span>输送与分流示意</span>
+                      <span class="chip ok" id="beltState">NORMAL</span>
+                    </div>
+                    <div class="beltCanvasWrap">
+                      <canvas id="beltCanvas" width="760" height="220"></canvas>
+                    </div>
+                  </div>
+
+                  <div style="display:grid;gap:12px">
+                    <div class="chartBox">
+                      <div class="boxHead">
+                        <span>处理趋势</span>
+                        <span class="badge">12 min</span>
+                      </div>
+                      <div class="beltCanvasWrap" style="height:210px">
+                        <canvas id="lineChart" width="420" height="220"></canvas>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div id="screenDevices" style="display:none">
+                  <div class="deviceGrid" style="padding:0;margin-top:2px">
+                    <div class="deviceCard">
+                      <div class="row"><strong>供料单元</strong><span class="chip ok">ONLINE</span></div>
+                      <div class="mini" style="margin-top:8px;line-height:1.7">运行模式：自动补料；传感器状态：正常；响应时间：12 ms</div>
+                    </div>
+                    <div class="deviceCard">
+                      <div class="row"><strong>整形单元</strong><span class="chip ok">ACTIVE</span></div>
+                      <div class="mini" style="margin-top:8px;line-height:1.7">振动频率：42 Hz；导向机构状态：正常；堵料监测：开启</div>
+                    </div>
+                    <div class="deviceCard">
+                      <div class="row"><strong>视觉识别</strong><span class="chip ok" id="tabCamState">READY</span></div>
+                      <div class="mini" style="margin-top:8px;line-height:1.7">识别类别：4 类；平均识别时间：86 ms；通信状态：已连接</div>
+                    </div>
+                    <div class="deviceCard">
+                      <div class="row"><strong>分流执行</strong><span class="chip ok" id="tabAirState">NORMAL</span></div>
+                      <div class="mini" style="margin-top:8px;line-height:1.7">执行机构：气动推杆；节拍同步：已启用；故障联锁：开启</div>
+                    </div>
+                  </div>
+                </div>
+                <div id="screenAlarms" style="display:none">
+                  <div class="logList" id="alarmScreenList" style="padding:0;margin-top:2px">
+                    <div class="logItem"><div class="logTime">09:00:12</div>系统启动完成，所有单元进入联机状态</div>
+                    <div class="logItem"><div class="logTime">09:00:28</div>视觉识别模型加载成功，开始分流任务</div>
+                    <div class="logItem"><div class="logTime">09:01:03</div>铝合金回收通道累计达到 35kg</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rightCol">
+          <div class="panel">
+            <div class="panelHeader">
+              <h3>设备状态</h3>
+              <span class="badge">PLC Network</span>
+            </div>
+            <div class="deviceGrid">
+              <div class="deviceCard">
+                <div class="row"><strong>PLC主站</strong><span class="chip ok" id="plcState">RUN</span></div>
+                <div class="mini">CPU Load</div>
+                <div class="progress"><div class="bar" id="plcLoad" style="width:62%"></div></div>
+              </div>
+              <div class="deviceCard">
+                <div class="row"><strong>HMI触摸屏</strong><span class="chip ok">ONLINE</span></div>
+                <div class="mini">Refresh</div>
+                <div class="progress"><div class="bar" style="width:88%"></div></div>
+              </div>
+              <div class="deviceCard">
+                <div class="row"><strong>视觉相机</strong><span class="chip ok" id="camState">READY</span></div>
+                <div class="mini">Frame Rate</div>
+                <div class="progress"><div class="bar" id="camLoad" style="width:75%"></div></div>
+              </div>
+              <div class="deviceCard">
+                <div class="row"><strong>分流机构</strong><span class="chip ok" id="airState">NORMAL</span></div>
+                <div class="mini">Actuator Duty</div>
+                <div class="progress"><div class="bar" id="airLoad" style="width:67%"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panelHeader">
+              <h3>分类统计</h3>
+              <span class="badge">Batch Counter</span>
+            </div>
+            <div class="tableWrap">
+              <table>
+                <thead>
+                  <tr><th>类别</th><th>数量</th><th>累计重量</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>铝合金边角料</td><td id="n1">126</td><td id="w1">38.4 kg</td></tr>
+                  <tr><td>不锈钢边角料</td><td id="n2">94</td><td id="w2">51.7 kg</td></tr>
+                  <tr><td>普通钢板边角料</td><td id="n3">143</td><td id="w3">79.3 kg</td></tr>
+                  <tr><td>异常件/混料</td><td id="n4">6</td><td id="w4">2.1 kg</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panelHeader">
+              <h3>异常与事件记录</h3>
+              <span class="badge">System Log</span>
+            </div>
+            <div class="logList" id="logList">
+              <div class="logItem"><div class="logTime">09:00:12</div>系统启动完成，所有单元进入联机状态</div>
+              <div class="logItem"><div class="logTime">09:00:28</div>视觉识别模型加载成功，开始分流任务</div>
+              <div class="logItem"><div class="logTime">09:01:03</div>铝合金回收通道累计达到 35kg</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panelHeader">
+              <h3>项目亮点</h3>
+              <span class="badge">Green Value</span>
+            </div>
+            <div class="panelBody">
+              <div class="deviceGrid" style="padding:0">
+                <div class="deviceCard">
+                  <div class="row"><strong>绿色回收</strong><span class="chip ok">LOW CARBON</span></div>
+                  <div class="mini" style="margin-top:8px;line-height:1.7">分类回收提高再利用率，减少混料损失与重复搬运。</div>
+                </div>
+                <div class="deviceCard">
+                  <div class="row"><strong>软硬一体</strong><span class="chip ok">PLC+HMI</span></div>
+                  <div class="mini" style="margin-top:8px;line-height:1.7">信捷PLC统一调度，HMI可视化监控，便于展示与答辩。</div>
+                </div>
+                <div class="deviceCard">
+                  <div class="row"><strong>数据驱动</strong><span class="chip ok">STAT</span></div>
+                  <div class="mini" style="margin-top:8px;line-height:1.7">统计数量、重量、异常率，为回收路径优化提供数据支撑。</div>
+                </div>
+                <div class="deviceCard">
+                  <div class="row"><strong>安全可靠</strong><span class="chip ok">INTERLOCK</span></div>
+                  <div class="mini" style="margin-top:8px;line-height:1.7">堵料报警、联锁停机、人工复位，更符合工业现场演示逻辑。</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+
+<script>
+let running = true;
+let alarmMode = false;
+let tick = 0;
+let flowIndex = 0;
+let speedSeries = [52,56,58,61,63,64,66,65,68,69,67,68];
+let pieces = [
+  {x:40,y:85,w:26,h:16,t:0,c:"#86b6ff"},
+  {x:-110,y:130,w:20,h:14,t:1,c:"#41d0ff"},
+  {x:-230,y:92,w:28,h:15,t:2,c:"#31c885"}
+];
+
+
+function switchTab(name){
+  const map = {
+    overview: ["screenOverview","tabOverview"],
+    devices: ["screenDevices","tabDevices"],
+    alarms: ["screenAlarms","tabAlarms"]
+  };
+  ["screenOverview","screenDevices","screenAlarms"].forEach(id=>{
+    document.getElementById(id).style.display = "none";
+  });
+  ["tabOverview","tabDevices","tabAlarms"].forEach(id=>{
+    document.getElementById(id).classList.remove("active");
+  });
+  document.getElementById(map[name][0]).style.display = "";
+  document.getElementById(map[name][1]).classList.add("active");
+}
+
+
+function nowTime(){
+  const d = new Date();
+  return d.toLocaleTimeString("zh-CN",{hour12:false});
+}
+
+function updateClock(){
+  document.getElementById("timeNow").innerText = nowTime();
+}
+
+function addLog(text){
+  const html = '<div class="logTime">'+nowTime()+'</div>'+text;
+  ["logList","alarmScreenList"].forEach(listId=>{
+    const box = document.getElementById(listId);
+    const div = document.createElement("div");
+    div.className = "logItem";
+    div.innerHTML = html;
+    box.prepend(div);
+    while(box.children.length > 8){ box.removeChild(box.lastChild); }
+  });
+}
+
+function setMode(mode){
+  const lamp = document.getElementById("modeLamp");
+  const title = document.getElementById("modeTitle");
+  const sub = document.getElementById("modeSub");
+  const chip = document.getElementById("modeChip");
+
+  lamp.className = "lamp";
+  chip.className = "chip ok";
+
+  const startBtn = document.getElementById("startBtn");
+  const pauseBtn = document.getElementById("pauseBtn");
+  const resetBtn = document.getElementById("resetBtn");
+  const alarmBtn = document.getElementById("alarmBtn");
+  const clearBtn = document.getElementById("clearBtn");
+  [startBtn,pauseBtn,resetBtn,alarmBtn,clearBtn].forEach(btn=>btn.classList.remove("active"));
+
+  if(mode==="run"){
+    lamp.classList.add("run");
+    title.innerText = "自动运行中";
+    sub.innerText = "当前流程：供料 → 整形 → 视觉识别 → PLC联锁 → 气动分流";
+    chip.innerText = "AUTO";
+    chip.className = "chip ok";
+    startBtn.classList.add("active");
+  }else if(mode==="pause"){
+    lamp.classList.add("pause");
+    title.innerText = "系统暂停";
+    sub.innerText = "设备保持在安全停机状态，可继续启动或执行复位。";
+    chip.innerText = "PAUSE";
+    chip.className = "chip warn";
+    pauseBtn.classList.add("active");
+  }else if(mode==="reset"){
+    title.innerText = "系统已复位";
+    sub.innerText = "统计计数与流程状态已清零，等待重新启动。";
+    chip.innerText = "RESET";
+    chip.className = "chip warn";
+    resetBtn.classList.add("active");
+  }else if(mode==="alarm"){
+    lamp.classList.add("alarm");
+    title.innerText = "堵料报警中";
+    sub.innerText = "整形输送段检测到堵料，系统已执行联锁停机保护。";
+    chip.innerText = "ALARM";
+    chip.className = "chip bad";
+    alarmBtn.classList.add("active");
+  }else if(mode==="clear"){
+    lamp.classList.add("pause");
+    title.innerText = "报警已解除";
+    sub.innerText = "故障状态已清除，请重新启动系统恢复自动运行。";
+    chip.innerText = "READY";
+    chip.className = "chip warn";
+    clearBtn.classList.add("active");
+  }
+}
+
+function setNodes(index){
+  for(let i=0;i<5;i++){
+    document.getElementById("node"+i).classList.toggle("active", i===index && running && !alarmMode);
+  }
+}
+
+function startLine(){
+  running = true;
+  alarmMode = false;
+  setMode("run");
+  document.getElementById("plcState").innerText = "RUN";
+  document.getElementById("plcState").className = "chip ok";
+  document.getElementById("camState").innerText = "READY";
+  document.getElementById("tabCamState").innerText = "READY";
+  document.getElementById("camState").className = "chip ok";
+  document.getElementById("tabCamState").className = "chip ok";
+  document.getElementById("airState").innerText = "NORMAL";
+  document.getElementById("tabAirState").innerText = "NORMAL";
+  document.getElementById("airState").className = "chip ok";
+  document.getElementById("tabAirState").className = "chip ok";
+  document.getElementById("beltState").innerText = "NORMAL";
+  document.getElementById("beltState").className = "chip ok";
+  addLog("系统进入自动运行模式");
+}
+
+function pauseLine(){
+  running = false;
+  setMode("pause");
+  document.getElementById("plcState").innerText = "PAUSE";
+  document.getElementById("plcState").className = "chip warn";
+  addLog("系统已暂停，等待人工干预或重新启动");
+}
+
+function resetLine(){
+  running = false;
+  alarmMode = false;
+  setMode("reset");
+  document.getElementById("speedValue").innerText = "0";
+  document.getElementById("accValue").innerText = "0.0%";
+  document.getElementById("energyValue").innerText = "0.00";
+  document.getElementById("effUp").innerText = "0";
+  document.getElementById("sumWeight").innerText = "0.0";
+  ["n1","n2","n3","n4"].forEach(id=>document.getElementById(id).innerText = "0");
+  ["w1","w2","w3","w4"].forEach(id=>document.getElementById(id).innerText = "0.0 kg");
+  document.getElementById("plcState").innerText = "READY";
+  document.getElementById("plcState").className = "chip warn";
+  document.getElementById("camState").innerText = "READY";
+  document.getElementById("tabCamState").innerText = "READY";
+  document.getElementById("camState").className = "chip ok";
+  document.getElementById("tabCamState").className = "chip ok";
+  document.getElementById("airState").innerText = "NORMAL";
+  document.getElementById("tabAirState").innerText = "NORMAL";
+  document.getElementById("airState").className = "chip ok";
+  document.getElementById("tabAirState").className = "chip ok";
+  document.getElementById("beltState").innerText = "RESET";
+  document.getElementById("beltState").className = "chip warn";
+  speedSeries = [0,0,0,0,0,0,0,0,0,0,0,0];
+  pieces = [
+    {x:40,y:85,w:26,h:16,t:0,c:"#86b6ff"},
+    {x:-110,y:130,w:20,h:14,t:1,c:"#41d0ff"},
+    {x:-230,y:92,w:28,h:15,t:2,c:"#31c885"}
+  ];
+  addLog("系统已复位，统计数据清零");
+  drawLine();
+  drawBelt();
+}
+
+function simulateAlarm(){
+  running = false;
+  alarmMode = true;
+  setMode("alarm");
+  document.getElementById("plcState").innerText = "STOP";
+  document.getElementById("plcState").className = "chip bad";
+  document.getElementById("camState").innerText = "BLOCK";
+  document.getElementById("tabCamState").innerText = "BLOCK";
+  document.getElementById("camState").className = "chip bad";
+  document.getElementById("tabCamState").className = "chip bad";
+  document.getElementById("airState").innerText = "STOP";
+  document.getElementById("tabAirState").innerText = "STOP";
+  document.getElementById("airState").className = "chip bad";
+  document.getElementById("tabAirState").className = "chip bad";
+  document.getElementById("beltState").innerText = "ALARM";
+  document.getElementById("beltState").className = "chip bad";
+  addLog("整形输送段检测到堵料，系统触发停机保护");
+}
+
+function clearAlarm(){
+  alarmMode = false;
+  running = false;
+  setMode("clear");
+  document.getElementById("plcState").innerText = "READY";
+  document.getElementById("plcState").className = "chip warn";
+  document.getElementById("camState").innerText = "READY";
+  document.getElementById("tabCamState").innerText = "READY";
+  document.getElementById("camState").className = "chip ok";
+  document.getElementById("tabCamState").className = "chip ok";
+  document.getElementById("airState").innerText = "NORMAL";
+  document.getElementById("tabAirState").innerText = "NORMAL";
+  document.getElementById("airState").className = "chip ok";
+  document.getElementById("tabAirState").className = "chip ok";
+  document.getElementById("beltState").innerText = "READY";
+  document.getElementById("beltState").className = "chip warn";
+  addLog("报警已清除，请重新启动系统");
+}
+
+function drawLine(){
+  const c = document.getElementById("lineChart");
+  const ctx = c.getContext("2d");
+  const w = c.width, h = c.height;
+  ctx.clearRect(0,0,w,h);
+
+  ctx.strokeStyle = "rgba(255,255,255,.08)";
+  ctx.lineWidth = 1;
+  for(let i=0;i<5;i++){
+    const y = 22 + i*(h-42)/4;
+    ctx.beginPath();
+    ctx.moveTo(34,y); ctx.lineTo(w-10,y); ctx.stroke();
+  }
+
+  ctx.fillStyle = "#9fb0d1";
+  ctx.font = "12px Microsoft YaHei";
+  [0,20,40,60,80].forEach((v,i)=>{
+    const y = h-20 - i*(h-42)/4;
+    ctx.fillText(v.toString(),4,y+4);
+  });
+
+  const stepX = (w-56)/(speedSeries.length-1);
+  const max = 80, min = 0;
+
+  const grad = ctx.createLinearGradient(0,0,0,h);
+  grad.addColorStop(0,"rgba(56,208,255,.30)");
+  grad.addColorStop(1,"rgba(56,208,255,.02)");
+
+  ctx.beginPath();
+  speedSeries.forEach((v,i)=>{
+    const x = 34 + i*stepX;
+    const y = h-20 - (v-min)/(max-min)*(h-42);
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.lineTo(34 + (speedSeries.length-1)*stepX, h-20);
+  ctx.lineTo(34, h-20);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  ctx.beginPath();
+  speedSeries.forEach((v,i)=>{
+    const x = 34 + i*stepX;
+    const y = h-20 - (v-min)/(max-min)*(h-42);
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.strokeStyle = "#38d0ff";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  speedSeries.forEach((v,i)=>{
+    const x = 34 + i*stepX;
+    const y = h-20 - (v-min)/(max-min)*(h-42);
+    ctx.beginPath();
+    ctx.arc(x,y,3.4,0,Math.PI*2);
+    ctx.fillStyle = "#90ecff";
+    ctx.fill();
+  });
+}
+
+function drawBelt(){
+  const c = document.getElementById("beltCanvas");
+  const ctx = c.getContext("2d");
+  const w = c.width, h = c.height;
+  ctx.clearRect(0,0,w,h);
+
+  ctx.fillStyle = "#0b1322";
+  ctx.fillRect(0,0,w,h);
+
+  // stations
+  const stations = [
+    {x:35, y:30, w:105, h:55, name:"供料"},
+    {x:170, y:30, w:105, h:55, name:"整形"},
+    {x:315, y:30, w:105, h:55, name:"视觉"},
+    {x:470, y:30, w:105, h:55, name:"PLC"},
+    {x:630, y:30, w:105, h:55, name:"分流"}
+  ];
+  stations.forEach((s,i)=>{
+    ctx.fillStyle = i===flowIndex && running && !alarmMode ? "#264d87" : "#16233a";
+    ctx.strokeStyle = "rgba(255,255,255,.10)";
+    ctx.lineWidth = 1;
+    roundRect(ctx,s.x,s.y,s.w,s.h,12,true,true);
+    ctx.fillStyle = "#e5efff";
+    ctx.font = "bold 15px Microsoft YaHei";
+    ctx.fillText(s.name,s.x+34,s.y+31);
+  });
+
+  // belt
+  ctx.fillStyle = "#202d46";
+  roundRect(ctx,40,110,650,34,16,true,false);
+  ctx.fillStyle = "#111c31";
+  roundRect(ctx,48,117,634,20,10,true,false);
+
+  for(let i=0;i<26;i++){
+    const xx = 55 + i*24 + (running && !alarmMode ? (tick*6 % 24) : 0);
+    ctx.fillStyle = "rgba(255,255,255,.08)";
+    ctx.fillRect(xx,118,12,18);
+  }
+
+  // diverter
+  ctx.fillStyle = alarmMode ? "#703131" : "#1e3b68";
+  roundRect(ctx,702,95,42,64,12,true,false);
+  ctx.fillStyle = "#d9e7ff";
+  ctx.font = "12px Microsoft YaHei";
+  ctx.fillText("分流",708,129);
+
+  ctx.strokeStyle = "#4bbcff";
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(744,127); ctx.lineTo(780,96); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(744,127); ctx.lineTo(780,158); ctx.stroke();
+
+  // bins
+  roundRect(ctx,785,72,78,40,10,true,false);
+  roundRect(ctx,785,139,78,40,10,true,false);
+  ctx.fillStyle = "#1a2b47";
+  ctx.font = "12px Microsoft YaHei";
+  ctx.fillText("回收A",807,96);
+  ctx.fillText("回收B",807,163);
+
+  pieces.forEach(p=>{
+    ctx.fillStyle = p.c;
+    roundRect(ctx,p.x,p.y,p.w,p.h,5,true,false);
+  });
+
+  if(alarmMode){
+    ctx.fillStyle = "rgba(239,107,107,.16)";
+    roundRect(ctx,215,100,60,46,10,true,false);
+    ctx.strokeStyle = "#ff8d8d";
+    ctx.beginPath();
+    ctx.moveTo(225,110); ctx.lineTo(265,136);
+    ctx.moveTo(265,110); ctx.lineTo(225,136);
+    ctx.stroke();
+  }
+}
+
+function roundRect(ctx,x,y,w,h,r,fill,stroke){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  if(fill) ctx.fill();
+  if(stroke) ctx.stroke();
+}
+
+function animateProcess(){
+  tick++;
+  updateClock();
+
+  if(running && !alarmMode){
+    flowIndex = (flowIndex + 1) % 5;
+    setNodes(flowIndex);
+
+    pieces.forEach(p=>{
+      p.x += 8;
+      if(p.x > 690){
+        if(Math.random() > 0.5){
+          p.y = 80;
+          p.x = 795;
+        }else{
+          p.y = 146;
+          p.x = 795;
+        }
+      }
+      if(p.x > 860){
+        p.x = -40 - Math.random()*240;
+        p.y = 80 + Math.random()*55;
+      }
+    });
+
+    const speed = 66 + Math.round(Math.sin(tick/2)*3 + Math.random()*2);
+    const acc = (97.2 + Math.random()*0.7).toFixed(1);
+    const energy = (0.39 + Math.random()*0.04).toFixed(2);
+    const eff = 180 + Math.round(Math.random()*12);
+
+    document.getElementById("speedValue").innerText = speed;
+    document.getElementById("accValue").innerText = acc + "%";
+    document.getElementById("energyValue").innerText = energy;
+    document.getElementById("effUp").innerText = eff;
+
+    const plc = 58 + Math.random()*10;
+    const cam = 70 + Math.random()*10;
+    const air = 64 + Math.random()*12;
+    document.getElementById("plcLoad").style.width = plc + "%";
+    document.getElementById("camLoad").style.width = cam + "%";
+    document.getElementById("airLoad").style.width = air + "%";
+
+    ["n1","n2","n3"].forEach((id,idx)=>{
+      const n = document.getElementById(id);
+      n.innerText = parseInt(n.innerText,10) + Math.floor(Math.random()*2);
+    });
+
+    ["w1","w2","w3"].forEach((id,idx)=>{
+      const w = document.getElementById(id);
+      const old = parseFloat(w.innerText);
+      w.innerText = (old + Math.random()*0.8).toFixed(1) + " kg";
+    });
+
+    let total = 0;
+    ["w1","w2","w3","w4"].forEach(id=>{ total += parseFloat(document.getElementById(id).innerText) || 0;});
+    document.getElementById("sumWeight").innerText = total.toFixed(1);
+
+    speedSeries.push(speed);
+    if(speedSeries.length > 12) speedSeries.shift();
+
+    if(Math.random() > 0.76){
+      addLog("完成一批次边角料识别与分流，系统运行稳定");
+    }
+  }else{
+    setNodes(-1);
+  }
+
+  drawLine();
+  drawBelt();
+}
+
+setMode("run");
+drawLine();
+drawBelt();
+updateClock();
+setInterval(animateProcess, 1300);
+setInterval(updateClock, 1000);
+</script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"7939e04a4baf43c8b86a560f74aac60e","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"45c2bf8136a245cd97f1c2e9a96c0730","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
